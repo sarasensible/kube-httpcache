@@ -1,0 +1,68 @@
+version: '3'
+
+services:
+  varnish0:
+    hostname: varnish0
+    build:
+      dockerfile: build/package/docker/Dockerfile
+      context: .
+    container_name: varnish0
+    volumes:
+      - "./deploy/docker-compose/vcl:/etc/varnish/tmpl"
+      - "./deploy/docker-compose/serviceaccount:/var/run/secrets/kubernetes.io/serviceaccount"
+      - "./deploy/docker-compose/varnish:/etc/varnish"
+    ports:
+      - "8990:8090"
+      - "8880:8080"
+    environment:
+      KUBERNETES_SERVICE_HOST: "127.0.0.1"
+      KUBERNETES_SERVICE_PORT: "80"
+      PURGE_KEY: "test"
+    command:
+      - -admin-addr=0.0.0.0
+      - -admin-port=6083
+      - -signaller-enable
+      - -signaller-port=8090
+      - -frontend-watch=false
+      - -frontend-port=8080
+      - -backend-watch=false
+      - -varnish-vcl-template=/etc/varnish/tmpl/default.vcl.tmpl
+      - -varnish-storage=malloc,128M
+      - -varnish-additional-parameters=backend_idle_timeout=300,timeout_idle=8
+
+  varnish1:
+    hostname: varnish1
+    image: quay.io/mittwald/kube-httpcache:stable
+    container_name: varnish1
+    volumes:
+      - "./deploy/docker-compose/vcl:/etc/varnish/tmpl"
+      - "./deploy/docker-compose/serviceaccount:/var/run/secrets/kubernetes.io/serviceaccount"
+      - "./deploy/docker-compose/varnish:/etc/varnish"
+    ports:
+      - "8991:8090"
+      - "8881:8080"
+    environment:
+      KUBERNETES_SERVICE_HOST: "127.0.0.1"
+      KUBERNETES_SERVICE_PORT: "80"
+      PURGE_KEY: "test"
+    command:
+      - -admin-addr=0.0.0.0
+      - -admin-port=6083
+      - -signaller-enable
+      - -signaller-port=8090
+      - -frontend-watch=false
+      - -frontend-port=8080
+      - -backend-watch=false
+      - -varnish-vcl-template=/etc/varnish/tmpl/default.vcl.tmpl
+      - -varnish-storage=malloc,128M
+      - -varnish-additional-parameters=backend_idle_timeout=300,timeout_idle=8
+
+  sampleengine:
+    image: tiangolo/uvicorn-gunicorn-fastapi:python3.11
+    container_name: sampleengine
+    ports:
+      - "8888:80"
+    volumes:
+      - "./deploy/docker-compose/source:/app"
+    environment:
+      APP_MODULE: "example:app"

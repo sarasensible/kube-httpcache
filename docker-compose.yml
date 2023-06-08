@@ -1,0 +1,38 @@
+version: '3'
+
+services:
+  varnish0:
+    hostname: varnish0
+    image: varnish:stable
+    container_name: varnish0
+    tmpfs:
+      - /var/lib/varnish/varnishd:exec
+    volumes:
+      - "./deploy/docker-compose/vcl:/etc/varnish:ro"
+    ports:
+      - "8880:80"
+    environment:
+      PURGE_KEY: "test"
+
+  varnish1:
+    hostname: varnish1
+    image: varnish:stable
+    container_name: varnish1
+    tmpfs:
+      - /var/lib/varnish/varnishd:exec
+    volumes:
+      - "./deploy/docker-compose/vcl:/etc/varnish:ro"
+    ports:
+      - "8881:80"
+    environment:
+      PURGE_KEY: "test"
+
+  sampleengine:
+    image: tiangolo/uvicorn-gunicorn-fastapi:python3.11
+    container_name: sampleengine
+    ports:
+      - "8888:80"
+    volumes:
+      - "./deploy/docker-compose/source:/app"
+    environment:
+      APP_MODULE: "example:app"
